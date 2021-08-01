@@ -1,7 +1,9 @@
 #include "Watchy_C4.h"
 #include "Roboto_Bold7pt7b.h"
 #include "Roboto_Bold24pt7b.h"
+#include "RobotoCondensed_Regular7pt7b.h"
 #include "RobotoCondensed_Regular10pt7b.h"
+#include "c4calls.h"
 #include "icons.h"
 
 
@@ -41,7 +43,7 @@ void WatchyC4::drawWatchFace(){
     */
 }
 
-// centered in both x and y
+// centered in x
 void WatchyC4::centerjustify(const char *str) {
   int16_t x1, y1;
   uint16_t w, h;
@@ -50,12 +52,58 @@ void WatchyC4::centerjustify(const char *str) {
   display.print(str);
 }
 
+// word wrap!
+void WatchyC4::wordwrap(const char *str, int width, int lineheight, int maxLines) {
+  static const char *WS = " \t\r\n\f";
+  int x = display.getCursorX(), y = display.getCursorY();
+  int16_t x1, y1;
+  uint16_t w, h;
+  char buf[strlen(str)+1];
+  const char *start = str;
+  int len, lastLen, lineCount = 0;
+  do {
+  len = strcspn(start, WS);
+  lastLen = len; // always display at least 1 word
+  while(1) {
+      strncpy(buf, start, len);
+      buf[len] = 0;
+      if (start[len]=='\0') {
+          break;
+      }
+      display.getTextBounds(buf, 0, 0, &x1, &y1, &w, &h);
+      if (w > width) {
+          // back up
+          len = lastLen;
+          buf[len] = 0;
+          break;
+      }
+      lastLen = len;
+      len += strspn(start+len, WS); // skip over whitespace
+      len += strcspn(start+len, WS); // find next break
+  }
+  display.setCursor(x, y);
+  display.print(buf);
+  // now advance to next line
+  y += lineheight;
+  start += len;
+  start += strspn(start, WS);
+  lineCount++;
+  } while(start[len] && lineCount <= maxLines);
+}
+
 void WatchyC4::drawCall() {
+    seed_random(); // a function of the current time
+    int current_def = get_random_int(NUMBER_OF_CALLS);
+
     display.setFont(&Roboto_Bold7pt7b); // 14px
     display.setTextWrap(false);
-    display.setCursor(DISPLAY_WIDTH/2, 0+18);
+    display.setCursor(DISPLAY_WIDTH/2, 0+14);
     display.setTextColor(FG_COLOR);
-    centerjustify("spin the top");
+    centerjustify(call_list[current_def].call);
+
+    display.setFont(&RobotoCondensed_Regular7pt7b); // 14px
+    display.setCursor(0, 16+14);
+    wordwrap(call_list[current_def].def, DISPLAY_WIDTH, 15, 7);
 }
 
 void WatchyC4::drawTime(){
@@ -143,4 +191,44 @@ void WatchyC4::drawWeather(){
     }else
     return;
     display.drawBitmap(145, 158, weatherIcon, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, DARKMODE ? GxEPD_WHITE : GxEPD_BLACK);
+}
+
+
+// RNG stuff
+void WatchyC4::seed_random(void) {
+  // overflow is fine here. seed is ~ # secs since start of month
+  // seconds are quantized to 10 second intervals
+  lfsr=(currentTime.Second/10 + 60*(currentTime.Minute + 60*(currentTime.Hour + 24*currentTime.Day)));
+  if (lfsr==0) { lfsr++; }
+}
+
+/* generate a uniform random number in the range [0,1] */
+unsigned short WatchyC4::get_random_bit() {
+  /* 16-bit galois LFSR, period 65535. */
+  /* see http://en.wikipedia.org/wiki/Linear_feedback_shift_register */
+  /* taps: 16 14 13 11; feedback polynomial: x^16 + x^14 + x^13 + x^11 + 1 */
+  unsigned short out = lfsr & 1u;
+  lfsr = (lfsr >> 1) ^ (-(out) & 0xB400u);
+  return out;
+}
+
+/* generate a uniform random number in the range [0, 2^n) */
+uint16_t WatchyC4::get_random_bits(unsigned short n) {
+  uint16_t out = 0;
+  while (n--) { out = (out << 1) | get_random_bit(); }
+  return out;
+}
+
+/* generate a uniform random number in the range [0, max) */
+// max should be in range (1,1024]
+uint16_t WatchyC4::get_random_int(uint16_t max) {
+  uint16_t val;
+  uint16_t low;
+  low = 1024 % max;
+  do {
+    // this loop is necessary to ensure the numbers are uniformly
+    // distributed.
+    val = get_random_bits(10);
+  } while (val < low);
+  return val % max;
 }
