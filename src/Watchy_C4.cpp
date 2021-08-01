@@ -32,9 +32,9 @@ void WatchyC4::drawWatchFace(){
     drawTime();
     drawDate();
     drawCall();
+    drawWeather();
     /*
     drawSteps();
-    drawWeather();
     drawBattery();
     display.drawBitmap(120, 77, WIFI_CONFIGURED ? wifi : wifioff, 26, 18, DARKMODE ? GxEPD_WHITE : GxEPD_BLACK);
     if(BLE_CONFIGURED){
@@ -61,20 +61,21 @@ void WatchyC4::wordwrap(const char *str, int width, int lineheight, int maxLines
   char buf[strlen(str)+1];
   const char *start = str;
   int len, lastLen, lineCount = 0;
+  display.setTextWrap(false);
   do {
   len = strcspn(start, WS);
   lastLen = len; // always display at least 1 word
   while(1) {
       strncpy(buf, start, len);
       buf[len] = 0;
-      if (start[len]=='\0') {
-          break;
-      }
-      display.getTextBounds(buf, 0, 0, &x1, &y1, &w, &h);
-      if (w > width) {
+      display.getTextBounds(buf, x, y, &x1, &y1, &w, &h);
+      if (w >= width) {
           // back up
           len = lastLen;
           buf[len] = 0;
+          break;
+      }
+      if (start[len]=='\0' || start[len]=='\n') {
           break;
       }
       lastLen = len;
@@ -95,15 +96,17 @@ void WatchyC4::drawCall() {
     seed_random(); // a function of the current time
     int current_def = get_random_int(NUMBER_OF_CALLS);
 
-    display.setFont(&Roboto_Bold7pt7b); // 14px
+    const GFXfont *font = &Roboto_Bold7pt7b;
+    display.setFont(font); // 14px
     display.setTextWrap(false);
-    display.setCursor(DISPLAY_WIDTH/2, 0+14);
+    display.setCursor(DISPLAY_WIDTH/2, 0+13);
     display.setTextColor(FG_COLOR);
     centerjustify(call_list[current_def].call);
 
     display.setFont(&RobotoCondensed_Regular7pt7b); // 14px
-    display.setCursor(0, 16+14);
-    wordwrap(call_list[current_def].def, DISPLAY_WIDTH, 15, 7);
+    display.setCursor(0, 16+font->yAdvance);
+    wordwrap(call_list[current_def].def, DISPLAY_WIDTH,
+             font->yAdvance, 7);
 }
 
 void WatchyC4::drawTime(){
@@ -160,8 +163,9 @@ void WatchyC4::drawWeather(){
     weatherData currentWeather = getWeatherData();
 
     int8_t temperature = currentWeather.temperature;
-    int16_t weatherConditionCode = currentWeather.weatherConditionCode;   
+    int16_t weatherConditionCode = currentWeather.weatherConditionCode;
 
+    /*
     //display.setFont(&DSEG7_Classic_Regular_39);
     int16_t  x1, y1;
     uint16_t w, h;
@@ -169,28 +173,30 @@ void WatchyC4::drawWeather(){
     display.setCursor(155 - w, 150);
     display.println(temperature);
     display.drawBitmap(165, 110, strcmp(TEMP_UNIT, "metric") == 0 ? celsius : fahrenheit, 26, 20, DARKMODE ? GxEPD_WHITE : GxEPD_BLACK);
+    */
     const unsigned char* weatherIcon;
 
     //https://openweathermap.org/weather-conditions
     if(weatherConditionCode > 801){//Cloudy
     weatherIcon = cloudy;
     }else if(weatherConditionCode == 801){//Few Clouds
-    weatherIcon = cloudsun;  
+    weatherIcon = cloudsun;
     }else if(weatherConditionCode == 800){//Clear
-    weatherIcon = sunny;  
+    weatherIcon = sunny;
     }else if(weatherConditionCode >=700){//Atmosphere
-    weatherIcon = cloudy; 
+    weatherIcon = cloudy;
     }else if(weatherConditionCode >=600){//Snow
     weatherIcon = snow;
     }else if(weatherConditionCode >=500){//Rain
-    weatherIcon = rain;  
+    weatherIcon = rain;
     }else if(weatherConditionCode >=300){//Drizzle
     weatherIcon = rain;
     }else if(weatherConditionCode >=200){//Thunderstorm
-    weatherIcon = rain; 
+    weatherIcon = rain;
     }else
     return;
-    display.drawBitmap(145, 158, weatherIcon, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, DARKMODE ? GxEPD_WHITE : GxEPD_BLACK);
+    // 48x32 px, so stick it in bottom right
+    display.drawBitmap(DISPLAY_WIDTH-WEATHER_ICON_WIDTH, DISPLAY_HEIGHT-WEATHER_ICON_HEIGHT, weatherIcon, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, FG_COLOR);
 }
 
 
