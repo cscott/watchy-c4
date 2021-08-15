@@ -121,6 +121,24 @@ void drawDate(tm *t){
   centerjustify(date_text);
 }
 
+void drawBattery(){
+    const unsigned char* batteryIcon;
+    float VBAT = Watchy::getBatteryVoltage();
+    // 48x32 px; stick it in bottom left
+    if(VBAT > 4.1){
+        batteryIcon = icon_battery4;
+    } else if(VBAT > 3.95 && VBAT <= 4.1){
+        batteryIcon = icon_battery3;
+    } else if(VBAT > 3.80 && VBAT <= 3.95){
+        batteryIcon = icon_battery2;
+    } else if(VBAT > 3.60 && VBAT <= 3.8){
+        batteryIcon = icon_battery1;
+    } else {
+        batteryIcon = icon_battery0;
+    }
+    display.drawBitmap(0, DISPLAY_HEIGHT-WEATHER_ICON_HEIGHT, batteryIcon, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, FG_COLOR);
+}
+
 void drawWeather(){
     auto currentWeather = Watchy_GetWeather::getWeather();
 
@@ -168,10 +186,11 @@ void TimeScreen::show() {
                        DISPLAY_WIDTH-8, DISPLAY_HEIGHT-i,
                        FG_COLOR);
   }
+  drawWeather();
+  drawBattery();
   drawTime(&t);
   drawDate(&t);
   drawCall(&t);
-  drawWeather();
 }
 
 
