@@ -15,9 +15,9 @@ jobs:
             --workdir /project                     \
             ddls/esp32_platformio_compiler:latest  \
             /bin/bash -c                           \
-            "pio run -e release"
+            "pio run -e debug"
       - name: Upload face binary artifact
         uses: actions/upload-artifact@v2
         with:
           name: Watchy-Screen-Face
-          path: .pio/build/release/firmware.bin
+          path: .pio/build/debug/firmware.bin

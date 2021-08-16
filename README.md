@@ -135,3 +135,7 @@ The face is organized as a carousel of time, weather, battery, steps, orientatio
 The settings display screen is a menu that lets you set the time, setup the wifi, update the firmware, synchronize the time with NTP, get your location by IP geolocation, refresh the weather, or buzz the motor.
 
 There are no dependencies between the screens, all of the screen instances and their organization will be in `main.cpp` most of the screens are just a `show` method.
+
+## Porting from Watchy
+
+See the file `PORTING.md` for information on how to port a watchface from Watchy to Watchy-Screen.

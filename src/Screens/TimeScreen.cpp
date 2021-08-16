@@ -171,8 +171,6 @@ void drawWeather(){
 }
 
 void TimeScreen::show() {
-  setenv("TZ", Watchy_GetLocation::currentLocation.timezone, 1);
-  tzset();
   tm t;
   time_t tt = now();
   localtime_r(&tt, &t);
