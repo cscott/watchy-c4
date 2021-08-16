@@ -21,8 +21,6 @@
 const uint8_t WEATHER_ICON_WIDTH = 48;
 const uint8_t WEATHER_ICON_HEIGHT = 32;
 
-const uint8_t DIVIDER = 100;
-
 using namespace Watchy;
 
 // centered in x
@@ -170,6 +168,34 @@ void drawWeather(){
     display.drawBitmap(DISPLAY_WIDTH-WEATHER_ICON_WIDTH, DISPLAY_HEIGHT-WEATHER_ICON_HEIGHT, weatherIcon, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, FG_COLOR);
 }
 
+void drawCO2Separator(){
+  // Separator line / CO2 gauge
+  // 60px = 1000ppm, range is 0-3000pm. 0-1000=green, 1000-2000=yellow
+  // See https://www.werma.com/en/products/system/co2_traffic_light.php
+  const int GAUGE_POS = DISPLAY_HEIGHT - 63;
+  const int GAUGE_SEG_WIDTH = 60;
+  const int GAUGE_OFFSET = (DISPLAY_WIDTH - 3*GAUGE_SEG_WIDTH) / 2;
+  const int TICK_HEIGHT = 2;
+  for (int i=1; i<=2; i++) {
+      display.drawLine(GAUGE_OFFSET+(i*GAUGE_SEG_WIDTH), GAUGE_POS - TICK_HEIGHT,
+                       GAUGE_OFFSET+(i*GAUGE_SEG_WIDTH), GAUGE_POS + TICK_HEIGHT,
+                       FG_COLOR );
+  }
+  for (int i=GAUGE_POS-1; i<=GAUGE_POS+1; i++) {
+      display.drawLine(GAUGE_OFFSET, i,
+                       GAUGE_OFFSET + 3*GAUGE_SEG_WIDTH, i,
+                       i==GAUGE_POS ? BG_COLOR : FG_COLOR);
+  }
+  // for now, draw battery voltage on this graph
+  float VBAT = Watchy::getBatteryVoltage();
+  float percent = (VBAT-3.6)/(4.2-3.6);
+  if (percent > 1) { percent = 1; }
+  if (percent < 0) { percent = 0; }
+  display.drawLine(GAUGE_OFFSET, GAUGE_POS,
+                   GAUGE_OFFSET + (int)((3*GAUGE_SEG_WIDTH)*percent), GAUGE_POS,
+                   FG_COLOR);
+}
+
 void TimeScreen::show() {
   tm t;
   time_t tt = now();
@@ -178,12 +204,7 @@ void TimeScreen::show() {
   Watchy::display.fillScreen(BG_COLOR);
   Watchy::display.setTextColor(FG_COLOR);
 
-  // Separator line
-  for (int i=62; i<=63; i++) {
-      display.drawLine(8, DISPLAY_HEIGHT-i,
-                       DISPLAY_WIDTH-8, DISPLAY_HEIGHT-i,
-                       FG_COLOR);
-  }
+  drawCO2Separator();
   drawWeather();
   drawBattery();
   drawTime(&t);
