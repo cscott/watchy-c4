@@ -126,15 +126,15 @@ void drawBattery(){
     float VBAT = Watchy::getBatteryVoltage();
     // 48x32 px; stick it in bottom left
     if(VBAT > 4.1){
-        batteryIcon = icon_battery4;
+        batteryIcon = icon_battery_4;
     } else if(VBAT > 3.95 && VBAT <= 4.1){
-        batteryIcon = icon_battery3;
+        batteryIcon = icon_battery_3;
     } else if(VBAT > 3.80 && VBAT <= 3.95){
-        batteryIcon = icon_battery2;
+        batteryIcon = icon_battery_2;
     } else if(VBAT > 3.60 && VBAT <= 3.8){
-        batteryIcon = icon_battery1;
+        batteryIcon = icon_battery_1;
     } else {
-        batteryIcon = icon_battery0;
+        batteryIcon = icon_battery_0;
     }
     display.drawBitmap(0, DISPLAY_HEIGHT-WEATHER_ICON_HEIGHT, batteryIcon, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, FG_COLOR);
 }
