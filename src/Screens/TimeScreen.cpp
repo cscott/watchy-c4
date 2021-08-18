@@ -69,7 +69,7 @@ void wordwrap(const char *str, int width, int lineheight, int maxLines) {
   start += len;
   start += strspn(start, WS);
   lineCount++;
-  } while(start[len] && lineCount < maxLines);
+  } while(*start && lineCount < maxLines);
 }
 
 void rightJustify(const char *txt, uint16_t &yPos) {
