@@ -2,9 +2,9 @@
 
 #include "Screen.h"
 
-class TimeScreen : public Screen {
+class WatchyC4 : public Screen {
  public:
-  TimeScreen(uint16_t bg = GxEPD_WHITE) : Screen(bg) {}
+  WatchyC4(uint16_t bg = GxEPD_WHITE) : Screen(bg) {}
   void show() override;
  private:
   void drawCall(tm *t);

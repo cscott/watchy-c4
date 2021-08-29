@@ -1,4 +1,4 @@
-#include "TimeScreen.h"
+#include "WatchyC4.h"
 
 #include <stdlib.h>
 #include <time.h>
@@ -82,7 +82,7 @@ void rightJustify(const char *txt, uint16_t &yPos) {
   display.print(txt);
 }
 
-void TimeScreen::drawCall(tm *t) {
+void WatchyC4::drawCall(tm *t) {
     seed_random(t); // a function of the current time
     int current_def = get_random_int(NUMBER_OF_CALLS);
 
@@ -196,7 +196,7 @@ void drawCO2Separator(){
                    FG_COLOR);
 }
 
-void TimeScreen::show() {
+void WatchyC4::show() {
   tm t;
   time_t tt = now();
   localtime_r(&tt, &t);
@@ -214,7 +214,7 @@ void TimeScreen::show() {
 
 
 // RNG stuff
-void TimeScreen::seed_random(tm *t) {
+void WatchyC4::seed_random(tm *t) {
   // overflow is fine here. seed is ~ # secs since start of month
   // seconds are quantized to 10 second intervals
   lfsr=(t->tm_sec/10 + 60*(t->tm_min + 60*(t->tm_hour + 24*t->tm_mday)));
@@ -222,7 +222,7 @@ void TimeScreen::seed_random(tm *t) {
 }
 
 /* generate a uniform random number in the range [0,1] */
-unsigned short TimeScreen::get_random_bit() {
+unsigned short WatchyC4::get_random_bit() {
   /* 16-bit galois LFSR, period 65535. */
   /* see http://en.wikipedia.org/wiki/Linear_feedback_shift_register */
   /* taps: 16 14 13 11; feedback polynomial: x^16 + x^14 + x^13 + x^11 + 1 */
@@ -232,7 +232,7 @@ unsigned short TimeScreen::get_random_bit() {
 }
 
 /* generate a uniform random number in the range [0, 2^n) */
-uint16_t TimeScreen::get_random_bits(unsigned short n) {
+uint16_t WatchyC4::get_random_bits(unsigned short n) {
   uint16_t out = 0;
   while (n--) { out = (out << 1) | get_random_bit(); }
   return out;
@@ -240,7 +240,7 @@ uint16_t TimeScreen::get_random_bits(unsigned short n) {
 
 /* generate a uniform random number in the range [0, max) */
 // max should be in range (1,1024]
-uint16_t TimeScreen::get_random_int(uint16_t max) {
+uint16_t WatchyC4::get_random_int(uint16_t max) {
   uint16_t val;
   uint16_t low;
   low = 1024 % max;
