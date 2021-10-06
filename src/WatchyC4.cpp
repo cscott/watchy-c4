@@ -3,10 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "Roboto_Bold7pt7b.h"
-#include "Roboto_Bold24pt7b.h"
-#include "RobotoCondensed_Regular7pt7b.h"
-#include "RobotoCondensed_Regular10pt7b.h"
+#include "fonts.h"
 #include "c4-calls.h"
 #include "c4-icons.h"
 
@@ -168,6 +165,8 @@ void drawWeather(){
     display.drawBitmap(DISPLAY_WIDTH-WEATHER_ICON_WIDTH, DISPLAY_HEIGHT-WEATHER_ICON_HEIGHT, weatherIcon, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, FG_COLOR);
 }
 
+extern uint16_t getLastCO2(void);
+
 void drawCO2Separator(){
   // Separator line / CO2 gauge
   // 60px = 1000ppm, range is 0-3000pm. 0-1000=green, 1000-2000=yellow
@@ -186,9 +185,8 @@ void drawCO2Separator(){
                        GAUGE_OFFSET + 3*GAUGE_SEG_WIDTH, i,
                        i==GAUGE_POS ? BG_COLOR : FG_COLOR);
   }
-  // for now, draw battery voltage on this graph
-  float VBAT = Watchy::getBatteryVoltage();
-  float percent = (VBAT-3.6)/(4.2-3.6);
+  // Read CO2 level
+  float percent = getLastCO2() / 3000.;
   if (percent > 1) { percent = 1; }
   if (percent < 0) { percent = 0; }
   display.drawLine(GAUGE_OFFSET, GAUGE_POS,
