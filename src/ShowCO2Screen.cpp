@@ -9,12 +9,27 @@ extern uint16_t getLastCO2(void);
 extern float getLastTemperature(void);
 extern float getLastHumidity(void);
 
+//#define WEEKLY_GRAPH
+#define DAILY_GRAPH
+//#define HOURLY_GRAPH // useful for debugging
+
+#if defined(WEEKLY_GRAPH)
+const time_t updateInterval = SECS_PER_HOUR;
 const int co2Readingssz = 24 * 7;
+const int graphDivisions = 7; // days
+#elif defined(DAILY_GRAPH)
+const time_t updateInterval = 10 * 60 /*SECS_PER_MINUTE*/; // 10 minutes
+const int co2Readingssz = 24 * 60 * 60 / updateInterval;
+const int graphDivisions = 24; // hours
+#elif defined(HOURLY_GRAPH)
+const time_t updateInterval = 20; // 20 seconds
+const int co2Readingssz = 60 * 60 / updateInterval;
+const int graphDivisions = 4; // 15 minutes
+#endif
 static RTC_DATA_ATTR uint16_t co2ReadingMin[co2Readingssz];
 static RTC_DATA_ATTR uint16_t co2ReadingMax[co2Readingssz];
 static RTC_DATA_ATTR int nextReading = 0;
 static RTC_DATA_ATTR time_t lastReadingTS = 0;
-const time_t updateInterval = SECS_PER_HOUR;
 
 static void OnWake(esp_sleep_wakeup_cause_t wakeup_reason) {
     // setup
@@ -57,39 +72,64 @@ static float mapRange(const float v, const float inMax, const float inMin,
          outMin;
 }
 
+static int mapReading(uint16_t reading, const int16_t height) {
+    return min(int(mapRange(reading, 3000, 0, height, 0) + 0.5), int(height));
+}
+
+void printfcomma(uint16_t n) {
+}
+
 void ShowCO2Screen::show() {
   float fgColor = (bgColor == GxEPD_WHITE ? GxEPD_BLACK : GxEPD_WHITE);
   Watchy::display.fillScreen(bgColor);
   Watchy::display.setFont(&RobotoCondensed_Regular10pt7b);
-  Watchy::display.setCursor(40, 38); // y=25 is good if you want to squeeze in another line
+  const int headingX = 40, headingY = 24;
+  Watchy::display.setCursor(headingX, headingY);
   uint16_t co2_reading = getLastCO2();
-  Watchy::display.printf("CO2 %4d ppm", co2_reading);
+  Watchy::display.printf("CO  ");
+  if (co2_reading < 1000) {
+      Watchy::display.printf("%5d", co2_reading);
+  } else {
+      Watchy::display.printf("%1d,%03d", co2_reading/1000, co2_reading%1000);
+  }
+  Watchy::display.printf(" ppm");
   Watchy::display.setFont(&RobotoCondensed_Regular7pt7b);
+  const int xoffset = 23, yoffset = 4;
+  Watchy::display.setCursor(headingX + xoffset, headingY + yoffset);
+  Watchy::display.printf("2");
   //Watchy::display.printf(co2_reading <= 1000 ? "(Good)" : (co2_reading <= 2000 : "(okay)" : "(bad)"));
   Watchy::display.setCursor(40, 200-3);
   Watchy::display.setFont(&RobotoCondensed_Regular7pt7b);
   Watchy::display.printf("%3.0f deg F %2.0f%% Humidity\n", (getLastTemperature()*9/5)+32, getLastHumidity());
   // draw the history graph
-  const int16_t margin = 16;
-  const int16_t height = 120;
+  const int16_t height = 144;
   const int16_t width = co2Readingssz;
+  const int16_t margin = (200-width)/2;
   const int16_t x0 = margin + 1;  // left edge of graph
-  const int16_t y0 = DISPLAY_HEIGHT - margin - height - 1;  // top of graph
+  const int16_t y0 = DISPLAY_HEIGHT - 16/*bottom margin*/ - height - 1;  // top of graph
   // draw a border around it
   Watchy::display.drawRect(x0 - 1, y0 - 1, width + 2, height + 2, fgColor);
+  // draw dotted lines for 1000 (green-yellow) and 2000 (yellow-red)
+  for (int i = 0; i < co2Readingssz; i+=2) {
+      Watchy::display.drawPixel(x0 + i, y0 + height - mapReading(1000, height), fgColor);
+      Watchy::display.drawPixel(x0 + i, y0 + height - mapReading(2000, height), fgColor);
+  }
+  // draw xaxis ticks
+  for (int i = 1; i<graphDivisions; i++) {
+      int x = x0 + int((float(i)*co2Readingssz/graphDivisions)+0.5);
+      Watchy::display.drawLine(x, y0, x, y0 - 2, fgColor);
+      Watchy::display.drawLine(x, y0 + height - 1, x, y0 + height + 1, fgColor);
+  }
   for (int i = 0; i < co2Readingssz; i++) {
       const uint16_t vMin = co2ReadingMin[(nextReading + i + 1) % co2Readingssz];
       const uint16_t vMax = co2ReadingMax[(nextReading + i + 1) % co2Readingssz];
-      // map [3000 .. 0) onto [100..0)
-      const int h = min(int(mapRange(vMin, 3000, 0, height, 0.0) + 0.5), 100);
-      if (h > 0) {
-          Watchy::display.drawLine(x0 + i, y0 + height - h, x0 + i, y0 + height,
+      // map [3000 .. 0) onto [height..0)
+      const int hMin = mapReading(vMin, height);
+      const int hMax = mapReading(vMax, height);
+
+      if (hMin != 0 && hMax != 0) { // suppress uninit values
+          Watchy::display.drawLine(x0 + i, y0 + height - hMax, x0 + i, y0 + height - hMin,
                                   fgColor);
-      }
-      // also display max
-      const int h2 = min(int(mapRange(vMax, 3000, 0, height, 0.0) + 0.5), 100);
-      if (h2 > 0) {
-          Watchy::display.drawPixel(x0 + i, y0 + height - h2, fgColor);
       }
   }
 }
