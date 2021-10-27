@@ -13,6 +13,7 @@ The CO₂ level requires installing the CO₂ sensor as described in
 When you've done that, you might want a case:
 [cscott/watchy-co2-case](https://github.com/cscott/watchy-co2-case#readme).
 
-![Flashcard and time](./photos/flashcard.jpg)
+![Flashcard and time (nylon case)](./photos/flashcard2.jpg)
+![Flashcard and time (aluminum case)](./photos/flashcard.jpg)
 ![CO₂ selector screen](./photos/co2selector.jpg)
 ![CO₂ graph](./photos/graph.jpg)
