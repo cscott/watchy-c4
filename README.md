@@ -1,5 +1,5 @@
-c4face
-======
+Watchy C4 face
+==============
 
 This is a
 [C4 square dance](https://en.wikipedia.org/wiki/Challenge_square_dance)
